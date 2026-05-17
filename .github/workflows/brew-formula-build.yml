@@ -68,3 +68,44 @@ jobs:
           cd /tmp/pb
           python3 -m pip install --break-system-packages /tmp/pb/mcp
           python3 scripts/smoke_mcp_roundtrip.py
+
+      - name: Start service + probe SSE endpoint
+        run: |
+          # Day-8: formula gained a `service do ... end` block. Exercise
+          # the brew-services launchd path against the actual installed
+          # binary (the smoke step above runs `python3 -m project_brain_mcp`
+          # against a pip install, which is its own server instance).
+          brew services start project-brain-mcp
+          # Poll up to ~5s for the SSE endpoint to come up.
+          ok=""
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -sSf --max-time 1 -o /dev/null http://localhost:8787/sse; then
+              echo "SSE up after ${i} attempts"
+              ok=1
+              break
+            fi
+            sleep 0.5
+          done
+          if [ -z "$ok" ]; then
+            echo "SSE endpoint did not come up within 5s"
+            echo "--- brew services list:"
+            brew services list || true
+            echo "--- service log:"
+            tail -50 "$(brew --prefix)/var/log/project-brain-mcp.log" 2>/dev/null || true
+            echo "--- service error log:"
+            tail -50 "$(brew --prefix)/var/log/project-brain-mcp.error.log" 2>/dev/null || true
+            exit 1
+          fi
+          # Final probe — must return 200 + text/event-stream content-type.
+          STATUS=$(curl -sS --max-time 2 -o /dev/null -w "%{http_code}" http://localhost:8787/sse)
+          CT=$(curl -sS --max-time 2 -o /dev/null -w "%{content_type}" http://localhost:8787/sse)
+          echo "status=$STATUS content_type=$CT"
+          test "$STATUS" = "200" \
+            || { echo "Expected 200, got $STATUS"; exit 1; }
+          echo "$CT" | grep -qi "text/event-stream" \
+            || { echo "Expected text/event-stream, got $CT"; exit 1; }
+          echo "SSE OK"
+
+      - name: Stop service (cleanup)
+        if: always()
+        run: brew services stop project-brain-mcp || true
