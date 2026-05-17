@@ -1,10 +1,10 @@
 class ProjectBrainMcp < Formula
   include Language::Python::Virtualenv
 
-  desc "Markdown-in-git decision-tracking MCP server"
+  desc "Markdown-in-git decision-tracking MCP server (stdio + HTTP/SSE)"
   homepage "https://github.com/ai-project-brain/project-brain"
-  url "https://github.com/ai-project-brain/project-brain/archive/refs/tags/v1.0.0-rc.5.tar.gz"
-  sha256 "c3d52edb31a75ad0e6b19c930cc7189d9a6a6f27227309472aab470100a4faa9"
+  url "https://github.com/ai-project-brain/project-brain/archive/refs/tags/v1.0.0-rc.6.tar.gz"
+  sha256 "fcbb7c3f585297ff0d5f796083d9129224a351e8dce3462f41d939115edd23aa"
   license "Apache-2.0"
   head "https://github.com/ai-project-brain/project-brain.git", branch: "main"
 
@@ -170,6 +170,13 @@ class ProjectBrainMcp < Formula
     venv = virtualenv_create(libexec, "python3.12")
     venv.pip_install resources
     venv.pip_install_and_link buildpath/"mcp"
+  end
+
+  service do
+    run [opt_bin/"project-brain-mcp", "--http"]
+    keep_alive true
+    log_path var/"log/project-brain-mcp.log"
+    error_log_path var/"log/project-brain-mcp.error.log"
   end
 
   test do
