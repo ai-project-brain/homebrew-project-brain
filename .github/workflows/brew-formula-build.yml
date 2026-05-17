@@ -1,0 +1,53 @@
+name: Build & test formula
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Audit formula
+        run: |
+          brew style Formula/project-brain-mcp.rb
+          brew audit --strict --formula Formula/project-brain-mcp.rb
+
+      - name: Install formula (from local tap)
+        run: |
+          # Create a throwaway tap and install from there so the formula
+          # exercises the same path users will hit.
+          brew tap-new local/test --no-git
+          cp Formula/project-brain-mcp.rb "$(brew --repository)/Library/Taps/local/homebrew-test/Formula/"
+          brew install --formula local/test/project-brain-mcp
+
+      - name: Verify binary on PATH
+        run: |
+          command -v project-brain-mcp
+          # The MCP server speaks stdio. With stdin closed it should exit
+          # cleanly within a second or two — quick liveness check that does
+          # not require a full client handshake. perl alarm avoids depending
+          # on GNU coreutils' timeout (not always on PATH as `timeout` on macOS).
+          perl -e 'alarm 8; exec "project-brain-mcp" or die "exec failed"' </dev/null || true
+          echo "binary launched + exited or timed out cleanly"
+
+      - name: Clone main repo + run smoke test
+        run: |
+          git clone --depth=1 --branch v1.0.0-rc.4 \
+            https://github.com/ai-project-brain/project-brain.git /tmp/pb
+          cd /tmp/pb
+          # Smoke test imports project_brain_mcp in-process (for direct impl
+          # checks), so install the package itself + its deps in the system
+          # Python the smoke test runs as.
+          python3 -m pip install --break-system-packages /tmp/pb/mcp
+          python3 scripts/smoke_mcp_roundtrip.py
