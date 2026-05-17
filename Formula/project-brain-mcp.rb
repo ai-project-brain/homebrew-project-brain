@@ -163,9 +163,13 @@ class ProjectBrainMcp < Formula
 
   def install
     # The Python package source lives at mcp/ inside the repo tarball.
-    cd "mcp" do
-      virtualenv_install_with_resources
-    end
+    # `virtualenv_install_with_resources` assumes the package is at the
+    # build-path root, which it isn't. Drop down to the lower-level helpers
+    # so we can point pip at `buildpath/"mcp"` explicitly for the final
+    # install-and-link step.
+    venv = virtualenv_create(libexec, "python3.12")
+    venv.pip_install resources
+    venv.pip_install_and_link buildpath/"mcp"
   end
 
   test do
