@@ -18,22 +18,28 @@ jobs:
       - name: Set up Homebrew
         uses: Homebrew/actions/setup-homebrew@master
 
+      - name: Link checkout as tap (idempotent)
+        run: |
+          # Homebrew/setup-homebrew sometimes already does this, but be
+          # explicit: link the checked-out repo into the standard tap
+          # location so we can refer to the formula by its real tap-prefixed
+          # name (ai-project-brain/project-brain/project-brain-mcp) and
+          # avoid dual-tap conflicts.
+          tap_dir="$(brew --repository)/Library/Taps/ai-project-brain/homebrew-project-brain"
+          if [ ! -d "$tap_dir" ]; then
+            mkdir -p "$(dirname "$tap_dir")"
+            ln -sf "$GITHUB_WORKSPACE" "$tap_dir"
+          fi
+          brew tap | grep ai-project-brain/project-brain || brew tap ai-project-brain/project-brain
+
       - name: Style check (path-based — style still accepts paths)
         run: brew style Formula/project-brain-mcp.rb
 
-      - name: Tap formula locally
-        run: |
-          # Modern brew requires `brew audit <name>` (path-based audit is
-          # disabled). Tap into a throwaway local namespace so we can refer
-          # to the formula by name in both audit and install steps.
-          brew tap-new local/test --no-git
-          cp Formula/project-brain-mcp.rb "$(brew --repository)/Library/Taps/local/homebrew-test/Formula/"
-
       - name: Audit formula (by name)
-        run: brew audit --strict --formula local/test/project-brain-mcp
+        run: brew audit --strict --formula ai-project-brain/project-brain/project-brain-mcp
 
       - name: Install formula
-        run: brew install --formula local/test/project-brain-mcp
+        run: brew install --formula ai-project-brain/project-brain/project-brain-mcp
 
       - name: Verify binary on PATH
         run: |
