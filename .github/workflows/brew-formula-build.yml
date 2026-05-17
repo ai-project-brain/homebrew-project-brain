@@ -75,19 +75,24 @@ jobs:
           # the brew-services launchd path against the actual installed
           # binary (the smoke step above runs `python3 -m project_brain_mcp`
           # against a pip install, which is its own server instance).
+          #
+          # SSE keeps the connection open — curl will time out (exit 28)
+          # even on a working endpoint. We check %{http_code} via -w
+          # instead of curl's exit code: 200 = healthy, 000 = not bound.
           brew services start project-brain-mcp
-          # Poll up to ~5s for the SSE endpoint to come up.
           ok=""
           for i in 1 2 3 4 5 6 7 8 9 10; do
-            if curl -sSf --max-time 1 -o /dev/null http://localhost:8787/sse; then
-              echo "SSE up after ${i} attempts"
+            STATUS=$(curl -sS --max-time 1 -o /dev/null -w "%{http_code}" \
+              http://localhost:8787/sse 2>/dev/null || true)
+            if [ "$STATUS" = "200" ]; then
+              echo "SSE up after ${i} attempts (HTTP $STATUS)"
               ok=1
               break
             fi
             sleep 0.5
           done
           if [ -z "$ok" ]; then
-            echo "SSE endpoint did not come up within 5s"
+            echo "SSE endpoint did not return HTTP 200 within 5s"
             echo "--- brew services list:"
             brew services list || true
             echo "--- service log:"
@@ -97,8 +102,12 @@ jobs:
             exit 1
           fi
           # Final probe — must return 200 + text/event-stream content-type.
-          STATUS=$(curl -sS --max-time 2 -o /dev/null -w "%{http_code}" http://localhost:8787/sse)
-          CT=$(curl -sS --max-time 2 -o /dev/null -w "%{content_type}" http://localhost:8787/sse)
+          # Same `|| true` pattern: curl times out on SSE; we read the
+          # captured -w values, not curl's exit code.
+          STATUS=$(curl -sS --max-time 2 -o /dev/null -w "%{http_code}" \
+            http://localhost:8787/sse 2>/dev/null || true)
+          CT=$(curl -sS --max-time 2 -o /dev/null -w "%{content_type}" \
+            http://localhost:8787/sse 2>/dev/null || true)
           echo "status=$STATUS content_type=$CT"
           test "$STATUS" = "200" \
             || { echo "Expected 200, got $STATUS"; exit 1; }
