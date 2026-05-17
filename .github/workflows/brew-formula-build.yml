@@ -53,11 +53,18 @@ jobs:
 
       - name: Clone main repo + run smoke test
         run: |
-          git clone --depth=1 --branch v1.0.0-rc.4 \
+          # Clone the same tag the formula installs from, so the smoke
+          # test exercises the matching source. The smoke test runs the
+          # server as `python3 -m project_brain_mcp` (see smoke runner
+          # source), so the pip-installed wheel below is what's actually
+          # being tested for prompt/tool/resource discovery; the brew
+          # install above is verified to install cleanly and put the
+          # binary on PATH, but its in-process behavior is covered by
+          # equivalence with the same source under pip.
+          tag="$(awk -F'"' '/^  url /{print $2}' Formula/project-brain-mcp.rb | sed -n 's|.*/refs/tags/\(v[^/]*\)\.tar\.gz|\1|p')"
+          echo "Cloning $tag"
+          git clone --depth=1 --branch "$tag" \
             https://github.com/ai-project-brain/project-brain.git /tmp/pb
           cd /tmp/pb
-          # Smoke test imports project_brain_mcp in-process (for direct impl
-          # checks), so install the package itself + its deps in the system
-          # Python the smoke test runs as.
           python3 -m pip install --break-system-packages /tmp/pb/mcp
           python3 scripts/smoke_mcp_roundtrip.py
