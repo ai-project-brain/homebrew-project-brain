@@ -3,8 +3,8 @@ class ProjectBrainMcp < Formula
 
   desc "Markdown-in-git decision-tracking MCP server (stdio + HTTP/SSE)"
   homepage "https://github.com/ai-project-brain/project-brain"
-  url "https://github.com/ai-project-brain/project-brain/archive/refs/tags/v1.0.0-rc.6.tar.gz"
-  sha256 "fcbb7c3f585297ff0d5f796083d9129224a351e8dce3462f41d939115edd23aa"
+  url "https://github.com/ai-project-brain/project-brain/archive/refs/tags/v1.0.0-rc.7.tar.gz"
+  sha256 "1eae1bf2d238a8685cf23d274673d72b49a5da3aeece2f20a125887777fbfc34"
   license "Apache-2.0"
   head "https://github.com/ai-project-brain/project-brain.git", branch: "main"
 
