@@ -1,11 +1,10 @@
 name: Build & publish bottles
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'Formula/project-brain-mcp.rb'
   workflow_dispatch:
+  # Bottle builds run manually after each rc bump (url+sha256 change).
+  # Auto-triggering on Formula/*.rb push caused re-fire on bottle-SHA
+  # paste-back commits with nothing useful to do — see v1.0.0-rc.8 cycle.
 
 jobs:
   bottle:
