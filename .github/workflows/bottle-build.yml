@@ -23,12 +23,17 @@ jobs:
       - name: Set up Homebrew
         uses: Homebrew/actions/setup-homebrew@master
 
-      - name: Tap locally + install with --build-bottle
+      - name: Install with --build-bottle from the canonical tap
         run: |
-          brew tap-new local/tap
-          cp Formula/project-brain-mcp.rb \
-             "$(brew --repository)/Library/Taps/local/homebrew-tap/Formula/"
-          brew install --build-bottle --formula local/tap/project-brain-mcp
+          # Homebrew/setup-homebrew auto-taps this checkout as
+          # ai-project-brain/project-brain (the canonical name derived from
+          # the homebrew-project-brain repo). Don't create a second local/tap
+          # copy — `brew install --build-bottle` will see the same formula
+          # in two taps and fail at the "fix install linkage" step.
+          brew tap | grep -q '^ai-project-brain/project-brain$' \
+            || brew tap ai-project-brain/project-brain
+          brew install --build-bottle --formula \
+            ai-project-brain/project-brain/project-brain-mcp
 
       - name: Bottle the formula
         id: bottle
@@ -37,7 +42,7 @@ jobs:
             --json \
             --no-rebuild \
             --root-url "https://github.com/ai-project-brain/homebrew-project-brain/releases/download/bottles-rc.7" \
-            local/tap/project-brain-mcp
+            ai-project-brain/project-brain/project-brain-mcp
           # Captures the brew-emitted .bottle.tar.gz file(s) and the JSON manifest in cwd
           ls -la *.bottle.* *.json 2>/dev/null || true
 
