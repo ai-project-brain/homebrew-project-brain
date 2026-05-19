@@ -1,0 +1,106 @@
+name: Build & publish bottles
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Formula/project-brain-mcp.rb'
+  workflow_dispatch:
+
+jobs:
+  bottle:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, macos-15]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Tap locally + install with --build-bottle
+        run: |
+          brew tap-new local/tap
+          cp Formula/project-brain-mcp.rb \
+             "$(brew --repository)/Library/Taps/local/homebrew-tap/Formula/"
+          brew install --build-bottle --formula local/tap/project-brain-mcp
+
+      - name: Bottle the formula
+        id: bottle
+        run: |
+          brew bottle \
+            --json \
+            --no-rebuild \
+            --root-url "https://github.com/ai-project-brain/homebrew-project-brain/releases/download/bottles-rc.7" \
+            local/tap/project-brain-mcp
+          # Captures the brew-emitted .bottle.tar.gz file(s) and the JSON manifest in cwd
+          ls -la *.bottle.* *.json 2>/dev/null || true
+
+      - name: Print bottle DSL for formula update
+        run: |
+          # brew bottle's --json output includes the SHA the formula needs
+          for f in *.json; do
+            echo "=== bottle JSON: $f ==="
+            cat "$f"
+          done
+          # Or, more directly, emit a usable bottle block:
+          for f in *.bottle.tar.gz; do
+            SHA=$(shasum -a 256 "$f" | awk '{print $1}')
+            echo "BOTTLE_FILE=$f"
+            echo "BOTTLE_SHA=$SHA"
+          done
+
+      - name: Create or update GitHub Release for bottles
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view bottles-rc.7 \
+            --repo ai-project-brain/homebrew-project-brain >/dev/null 2>&1 \
+            || gh release create bottles-rc.7 \
+                 --repo ai-project-brain/homebrew-project-brain \
+                 --title "Bottles for v1.0.0-rc.7" \
+                 --notes "Pre-compiled Homebrew bottles for project-brain-mcp v1.0.0-rc.7. Auto-published by .github/workflows/bottle-build.yml. macos-14 (Sonoma) and macos-15 (Sequoia) on Apple Silicon."
+
+          for f in *.bottle.tar.gz; do
+            gh release upload bottles-rc.7 "$f" \
+              --repo ai-project-brain/homebrew-project-brain \
+              --clobber
+          done
+
+      - name: Upload bottle artifact for downstream summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: bottle-${{ matrix.os }}
+          path: |
+            *.bottle.tar.gz
+            *.json
+
+  summarize:
+    needs: bottle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+      - name: Emit bottle DSL block for formula paste
+        run: |
+          echo "## Bottle SHA256 summary (paste into Formula/project-brain-mcp.rb)"
+          echo ""
+          echo "bottle do"
+          echo "  root_url \"https://github.com/ai-project-brain/homebrew-project-brain/releases/download/bottles-rc.7\""
+          for d in bottle-macos-*; do
+            os="${d#bottle-}"
+            for f in "$d"/*.bottle.tar.gz; do
+              SHA=$(shasum -a 256 "$f" | awk '{print $1}')
+              case "$os" in
+                macos-14) MACOS_VER="arm64_sonoma" ;;
+                macos-15) MACOS_VER="arm64_sequoia" ;;
+                *) MACOS_VER="unknown" ;;
+              esac
+              echo "  sha256 cellar: :any, $MACOS_VER: \"$SHA\""
+            done
+          done
+          echo "end"
