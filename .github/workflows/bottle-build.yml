@@ -41,7 +41,7 @@ jobs:
           brew bottle \
             --json \
             --no-rebuild \
-            --root-url "https://github.com/ai-project-brain/homebrew-project-brain/releases/download/bottles-rc.7" \
+            --root-url "https://github.com/ai-project-brain/homebrew-project-brain/releases/download/bottles-rc.8" \
             ai-project-brain/project-brain/project-brain-mcp
           # Captures the brew-emitted .bottle.tar.gz file(s) and the JSON manifest in cwd
           ls -la *.bottle.* *.json 2>/dev/null || true
@@ -64,9 +64,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release view bottles-rc.7 \
+          gh release view bottles-rc.8 \
             --repo ai-project-brain/homebrew-project-brain >/dev/null 2>&1 \
-            || gh release create bottles-rc.7 \
+            || gh release create bottles-rc.8 \
                  --repo ai-project-brain/homebrew-project-brain \
                  --title "Bottles for v1.0.0-rc.7" \
                  --notes "Pre-compiled Homebrew bottles for project-brain-mcp v1.0.0-rc.7. Auto-published by .github/workflows/bottle-build.yml. macos-14 (Sonoma) and macos-15 (Sequoia) on Apple Silicon."
@@ -83,7 +83,7 @@ jobs:
           done
 
           for f in *.bottle.tar.gz; do
-            gh release upload bottles-rc.7 "$f" \
+            gh release upload bottles-rc.8 "$f" \
               --repo ai-project-brain/homebrew-project-brain \
               --clobber
           done
@@ -106,7 +106,7 @@ jobs:
           echo "## Bottle SHA256 summary (paste into Formula/project-brain-mcp.rb)"
           echo ""
           echo "bottle do"
-          echo "  root_url \"https://github.com/ai-project-brain/homebrew-project-brain/releases/download/bottles-rc.7\""
+          echo "  root_url \"https://github.com/ai-project-brain/homebrew-project-brain/releases/download/bottles-rc.8\""
           for d in bottle-macos-*; do
             os="${d#bottle-}"
             for f in "$d"/*.bottle.tar.gz; do
