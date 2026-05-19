@@ -71,6 +71,17 @@ jobs:
                  --title "Bottles for v1.0.0-rc.7" \
                  --notes "Pre-compiled Homebrew bottles for project-brain-mcp v1.0.0-rc.7. Auto-published by .github/workflows/bottle-build.yml. macos-14 (Sonoma) and macos-15 (Sequoia) on Apple Silicon."
 
+          # `brew bottle` emits filenames with a double-dash separator
+          # (`project-brain-mcp--<ver>.<tag>.bottle.tar.gz`), but brew on
+          # download synthesizes the URL with a single-dash separator when
+          # `root_url` points at a GitHub Releases bucket. Rename to match
+          # before uploading so the download URL resolves to a real asset.
+          for f in *--*.bottle.tar.gz; do
+            [ -f "$f" ] || continue
+            single="${f//--/-}"
+            mv "$f" "$single"
+          done
+
           for f in *.bottle.tar.gz; do
             gh release upload bottles-rc.7 "$f" \
               --repo ai-project-brain/homebrew-project-brain \
