@@ -9,7 +9,7 @@ class ProjectBrainMcp < Formula
   head "https://github.com/ai-project-brain/project-brain.git", branch: "main"
 
   depends_on "rust" => :build
-  depends_on "python@3.12"
+  depends_on "python@3.13"
 
   resource "annotated-types" do
     url "https://files.pythonhosted.org/packages/ee/67/531ea369ba64dcff5ec9c3402f9f51bf748cec26dde048a2f973a4eea7f5/annotated_types-0.7.0.tar.gz"
@@ -167,7 +167,7 @@ class ProjectBrainMcp < Formula
     # build-path root, which it isn't. Drop down to the lower-level helpers
     # so we can point pip at `buildpath/"mcp"` explicitly for the final
     # install-and-link step.
-    venv = virtualenv_create(libexec, "python3.12")
+    venv = virtualenv_create(libexec, "python3.13")
     venv.pip_install resources
     venv.pip_install_and_link buildpath/"mcp"
   end
