@@ -3,14 +3,14 @@ class ProjectBrainMcp < Formula
 
   desc "Markdown-in-git decision-tracking MCP server (stdio + HTTP/SSE)"
   homepage "https://github.com/ai-project-brain/project-brain"
-  url "https://github.com/ai-project-brain/project-brain/archive/refs/tags/v1.0.0-rc.9.tar.gz"
-  sha256 "0f02b19d52d9d6a6a86a92efd857abd69f9147b2121102cda4ec35fef8390ceb"
+  url "https://github.com/ai-project-brain/project-brain/archive/refs/tags/v1.0.0.tar.gz"
+  sha256 "58fc8763158bc73a7aee8ae3c2390674cae6bc8f7736a3579de52dbf3e7d0351"
   license "Apache-2.0"
 
   head "https://github.com/ai-project-brain/project-brain.git", branch: "main"
 
   bottle do
-    root_url "https://github.com/ai-project-brain/homebrew-project-brain/releases/download/bottles-rc.9"
+    root_url "https://github.com/ai-project-brain/homebrew-project-brain/releases/download/bottles-v1.0.0"
     sha256 cellar: :any, arm64_sonoma:  "ccbb752ed8bba90700d878a17573b0549fb417892d6b2f88100b47db2af86ab5"
     sha256 cellar: :any, arm64_sequoia: "15e2f96b924276ed1a03df55a6a5adf10e4a6e42cbbb507e747cbe50c66ada06"
   end
