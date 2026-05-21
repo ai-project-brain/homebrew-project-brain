@@ -11,8 +11,8 @@ class ProjectBrainMcp < Formula
 
   bottle do
     root_url "https://github.com/ai-project-brain/homebrew-project-brain/releases/download/bottles-v1.0.0"
-    sha256 cellar: :any, arm64_sonoma:  "79468610669353e4c2d7165f97448ea75e2c31cb51ce6b23102957cf563295f9"
-    sha256 cellar: :any, arm64_sequoia: "bf0530d667ed6a68a23942dafbac89568d88c8fd5d721a5b92f243c1c42b53cc"
+    sha256 cellar: :any, arm64_sonoma:  "2cbe7a0238d4387762e03880b60cfc2632f86304ef1941858cb19bb0993610eb"
+    sha256 cellar: :any, arm64_sequoia: "8fafd905bd751657557d8e422201a43f6634914cb581f67dc5fd647a3fe79500"
   end
 
   depends_on "rust" => :build
